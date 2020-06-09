@@ -185,10 +185,17 @@ func (configor *Configor) processDefaults(config interface{}) error {
 		}
 
 		for field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				if field.CanAddr() {
+					field.Set(reflect.New(field.Type().Elem()))
+				} else {
+					return fmt.Errorf("ProcessDefaults: field(%v) is nil", field.Type().String())
+				}
+			}
 			field = field.Elem()
 		}
 
-		switch field.Kind() {
+		switch field.Kind() { // TODO reflect.Map
 		case reflect.Struct:
 			if err := configor.processDefaults(field.Addr().Interface()); err != nil {
 				return err
@@ -326,6 +333,10 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 	// process defaults
 	if err = configor.processDefaults(config); err != nil {
 		return err
+	}
+
+	if configor.Config.Verbose {
+		fmt.Printf("Configuration after Defaults set, and before loading :\n  %#v\n", config)
 	}
 
 	for _, file := range configFiles {

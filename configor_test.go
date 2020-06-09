@@ -16,49 +16,40 @@ type Anonymous struct {
 	Description string
 }
 
+type Database struct {
+	Name     string
+	User     string `yaml:",omitempty" default:"root"`
+	Password string `required:"true" env:"DBPassword"`
+	Port     uint   `default:"3306" yaml:",omitempty" json:",omitempty"`
+	SSL      bool   `default:"true" yaml:",omitempty" json:",omitempty"`
+}
+
+type Contact struct {
+	Name  string
+	Email string `required:"true"`
+}
+
 type testConfig struct {
-	APPName string `default:"configor" json:",omitempty"`
-	Hosts   []string
-
-	DB struct {
-		Name     string
-		User     string `default:"root"`
-		Password string `required:"true" env:"DBPassword"`
-		Port     uint   `default:"3306" json:",omitempty"`
-		SSL      bool   `default:"true" json:",omitempty"`
-	}
-
-	Contacts []struct {
-		Name  string
-		Email string `required:"true"`
-	}
-
+	APPName   string `default:"configor" yaml:",omitempty" json:",omitempty"`
+	Hosts     []string
+	DB        *Database
+	Contacts  []Contact
 	Anonymous `anonymous:"true"`
-
-	private string
+	private   string
 }
 
 func generateDefaultConfig() testConfig {
 	return testConfig{
 		APPName: "configor",
 		Hosts:   []string{"http://example.org", "http://jinzhu.me"},
-		DB: struct {
-			Name     string
-			User     string `default:"root"`
-			Password string `required:"true" env:"DBPassword"`
-			Port     uint   `default:"3306" json:",omitempty"`
-			SSL      bool   `default:"true" json:",omitempty"`
-		}{
+		DB: &Database{
 			Name:     "configor",
 			User:     "configor",
 			Password: "configor",
 			Port:     3306,
 			SSL:      true,
 		},
-		Contacts: []struct {
-			Name  string
-			Email string `required:"true"`
-		}{
+		Contacts: []Contact{
 			{
 				Name:  "Jinzhu",
 				Email: "wosmvp@gmail.com",
@@ -200,6 +191,30 @@ func TestUnmatchedKeyInYamltestConfigFile(t *testing.T) {
 	} else if _, ok := err.(*yaml.TypeError); !ok {
 		// || !strings.Contains(err.Error(), "not found in struct") {
 		t.Errorf("Error should be of type yaml.TypeError. Instead error is %v", err)
+	}
+}
+
+func TestYamlDefaultValue(t *testing.T) {
+	config := generateDefaultConfig()
+	config.APPName = ""
+	config.DB.Port = 0
+	config.DB.SSL = false
+
+	if bytes, err := yaml.Marshal(config); err == nil {
+		if file, err := ioutil.TempFile("/tmp", "configor.*.yaml"); err == nil {
+			defer file.Close()
+			defer os.Remove(file.Name())
+			file.Write(bytes)
+
+			var result testConfig
+			Load(&result, file.Name())
+
+			if !reflect.DeepEqual(result, generateDefaultConfig()) {
+				t.Errorf("result should be set default value correctly")
+			}
+		}
+	} else {
+		t.Errorf("failed to marshal config")
 	}
 }
 
@@ -546,7 +561,7 @@ func TestValidation(t *testing.T) {
 		Slient   bool
 	}
 
-	cfg := &config{Email: "a@b.com", Email2: " ", AuthorIP: "1.1"}
+	cfg := &config{Email: "a@b.com", Email2: "", AuthorIP: "1.1"}
 	err := Load(cfg)
 	fmt.Printf("%+v\n", cfg)
 	if err != nil {
@@ -569,7 +584,7 @@ func TestUsePkger(t *testing.T) {
 			file.Write(bytes)
 
 			var result testConfig
-			 New(&Config{UsePkger: true}).Load(&result, "/" + file.Name())
+			New(&Config{UsePkger: true}).Load(&result, "/"+file.Name())
 			if !reflect.DeepEqual(result, config) {
 				t.Errorf("result should equal to original configuration")
 			}
