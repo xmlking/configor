@@ -2,6 +2,8 @@
 
 Golang Configuration module that support YAML, JSON, Shell Environment
 
+This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) work, with some bug fixes and enhancements. 
+
 ## Features
 
 - Strongly typed config with tags
@@ -14,14 +16,16 @@ Golang Configuration module that support YAML, JSON, Shell Environment
 - Config Sources
     - YAML files
     - Environment Variables 
-    - [x] Command line flags
+    - Command line flags
+    - [ ] Kubernetes ConfigMaps
     - Merge multiple config sources (Overlays)
 - Dynamic Configuration Management (Hot Reconfiguration)
     - Remote config push
     - Externalized configuration
     - Live component reloading / zero-downtime    
-    - Observe Changes - https://play.golang.org/p/41ygGZ-QaB https://gist.github.com/patrickmn/1549985
-- Detect Runtime Environment 
+    - [ ] Observe Config [Changes](https://play.golang.org/p/41ygGZ-QaB https://gist.github.com/patrickmn/1549985)
+- Detect Runtime Environment (test, development, production)
+- Support Embed config files in Go binaries via [pkger](https://github.com/markbates/pkger)
 
 ```golang
 type Item struct {
@@ -48,13 +52,13 @@ import (
 )
 
 var Config = struct {
-	APPName string `default:"app name"`
+	APPName string `default:"app name" yaml:",omitempty"`
 
 	DB struct {
 		Name     string
-		User     string `default:"root"`
+		User     string `default:"root" yaml:",omitempty"`
 		Password string `required:"true" env:"DBPassword"`
-		Port     uint   `default:"3306"`
+		Port     uint   `default:"3306" yaml:",omitempty"`
 	}
 
 	Contacts []struct {
@@ -91,11 +95,18 @@ Debug/Verbose mode is helpful when debuging your application, `debug mode` will 
 
 ```go
 // Enable debug mode or set env `CONFIGOR_DEBUG_MODE` to true when running your application
-configor.New(&configor.Config{Debug: true}).Load(&Config, "config.json")
+configor.New(&configor.Config{Debug: true}).Load(&Config, "config.yaml")
 
 // Enable verbose mode or set env `CONFIGOR_VERBOSE_MODE` to true when running your application
-configor.New(&configor.Config{Verbose: true}).Load(&Config, "config.json")
+configor.New(&configor.Config{Verbose: true}).Load(&Config, "config.yaml")
+
+// You can create custom Configor once and reuse to load multiple different configs  
+Configor := configor.New(&configor.Config{Debug: true})
+Configor.Load(&Config2, "config2.yaml")
+Configor.Load(&Config3, "config3.yaml")
 ```
+
+## Load
 
 # Advanced Usage
 
@@ -159,6 +170,17 @@ $ go run config.go
 // Will load `config.example.yml` automatically if `config.yml` not found and print warning message
 ```
 
+* Load files Via [Pkger](https://github.com/markbates/pkger)
+
+> Enable Pkger or set via env `CONFIGOR_VERBOSE_MODE` to true to use Pkger for loading files
+
+```go
+// config.go
+configor.New(&configor.Config{UsePkger: true}).Load(&Config, "/config/config.json")
+# or set via Environment Variable 
+$ CONFIGOR_USE_PKGER=true  go run config.go
+```
+
 * Load From Shell Environment
 
 ```go
@@ -207,3 +229,7 @@ func main() {
 	// configor.Load(&Config) // only load configurations from shell env & flag
 }
 ```
+
+## Gotchas
+- Defaults not initialized for `Map` type fields
+- Overlaying (merging) not working for `Map` type fields

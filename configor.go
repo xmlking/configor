@@ -43,6 +43,10 @@ func New(config *Config) *Configor {
 		config.Silent = true
 	}
 
+	if os.Getenv("CONFIGOR_USE_PKGER") != "" {
+		config.UsePkger = true
+	}
+
 	return &Configor{Config: config}
 }
 
