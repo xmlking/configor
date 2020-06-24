@@ -9,10 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+<a name="v0.1.1"></a>
+## [v0.1.1] - 2020-06-23
+### Fix
+- **defaults:** now applying defaults after loading the files
+
+
 <a name="v0.1.0"></a>
-## v0.1.0 - 2020-06-09
+## v0.1.0 - 2020-06-12
+### Ci
+- **release:** adding changelog
+
 ### Feat
 - **defaults:** added workarround when fields are structs with pointers
 
 
-[Unreleased]: https://github.com/xmlking/configor/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/xmlking/configor/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/xmlking/configor/compare/v0.1.0...v0.1.1
