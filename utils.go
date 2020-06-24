@@ -159,53 +159,54 @@ func getPrefixForStruct(prefixes []string, fieldStruct *reflect.StructField) []s
 }
 
 func (configor *Configor) processDefaults(config interface{}) error {
-	configValue := reflect.Indirect(reflect.ValueOf(config))
-	if configValue.Kind() != reflect.Struct {
-		return errors.New("invalid config, should be struct")
+	v := reflect.ValueOf(config)
+	// Only deal with pointers to structs.
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return errors.New("invalid config, should be a point to struct")
 	}
 
-	configType := configValue.Type()
-	for i := 0; i < configType.NumField(); i++ {
-		var (
-			fieldStruct = configType.Field(i)
-			field       = configValue.Field(i)
-		)
+	// Deref the pointer get to the struct.
+	v = v.Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		kind := field.Kind()
 
 		if !field.CanAddr() || !field.CanInterface() {
 			continue
 		}
-
-		if isBlank := reflect.DeepEqual(field.Interface(), reflect.Zero(field.Type()).Interface()); isBlank {
-			// Set default configuration if blank
-			if value := fieldStruct.Tag.Get("default"); value != "" {
-				if err := yaml.Unmarshal([]byte(value), field.Addr().Interface()); err != nil {
-					return err
-				}
-			}
-		}
-
-		for field.Kind() == reflect.Ptr {
+		// Only recurse down direct pointers, which should only be to nested structs.
+		if kind == reflect.Ptr && field.CanInterface() {
+			// if field is nil, set to empty value of its type.
 			if field.IsNil() {
 				if field.CanAddr() {
 					field.Set(reflect.New(field.Type().Elem()))
 				} else {
-					return fmt.Errorf("ProcessDefaults: field(%v) is nil", field.Type().String())
+					return fmt.Errorf("ProcessDefaults: field(%+v) is nil", field.Type().String())
 				}
 			}
-			field = field.Elem()
+			configor.processDefaults(field.Interface())
 		}
 
-		switch field.Kind() { // TODO reflect.Map
-		case reflect.Struct:
-			if err := configor.processDefaults(field.Addr().Interface()); err != nil {
-				return err
-			}
-		case reflect.Slice:
+		// In case of arrays/slices (repeated fields) go down to the concrete type.
+		if kind == reflect.Array || kind == reflect.Slice {
 			for i := 0; i < field.Len(); i++ {
-				if reflect.Indirect(field.Index(i)).Kind() == reflect.Struct {
-					if err := configor.processDefaults(field.Index(i).Addr().Interface()); err != nil {
-						return err
-					}
+				configor.processDefaults(field.Index(i).Addr().Interface())
+			}
+		}
+
+		// TODO reflect.Map
+		// TODO reflect.Struct
+		//if kind == reflect.Array {
+		//	configor.processDefaults(field.Addr().Interface());
+		//}
+
+		// Only when blank, fill the defaults
+		if isBlank := reflect.DeepEqual(field.Interface(), reflect.Zero(field.Type()).Interface()); isBlank {
+			if defaultValue := t.Field(i).Tag.Get("default"); defaultValue != "" {
+				if err := yaml.Unmarshal([]byte(defaultValue), field.Addr().Interface()); err != nil {
+					return err
 				}
 			}
 		}
@@ -331,13 +332,13 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 	configFiles := configor.getConfigurationFiles(files...)
 
 	// process defaults
-	if err = configor.processDefaults(config); err != nil {
-		return err
-	}
-
-	if configor.Config.Verbose {
-		fmt.Printf("Configuration after Defaults set, and before loading :\n  %#v\n", config)
-	}
+	//if err = configor.processDefaults(config); err != nil {
+	//	return err
+	//}
+	//
+	//if configor.Config.Verbose {
+	//	fmt.Printf("Configuration after Defaults set, and before loading :\n  %#v\n", config)
+	//}
 
 	for _, file := range configFiles {
 		if configor.Config.Debug || configor.Config.Verbose {
@@ -346,6 +347,19 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 		if err = configor.processFile(config, file); err != nil {
 			return err
 		}
+	}
+
+	if configor.Config.Verbose {
+		fmt.Printf("Configuration after loading, and before Defaults set :\n  %#v\n", config)
+	}
+
+	// process defaults
+	if err = configor.processDefaults(config); err != nil {
+		return err
+	}
+
+	if configor.Config.Verbose {
+		fmt.Printf("Configuration after loading and Defaults set, before ENV processing :\n  %#v\n", config)
 	}
 
 	if prefix := configor.getENVPrefix(config); prefix == "-" {

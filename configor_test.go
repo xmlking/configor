@@ -25,7 +25,7 @@ type Database struct {
 }
 
 type Contact struct {
-	Name  string
+	Name  string `default:"sumo" yaml:",omitempty"  json:",omitempty"`
 	Email string `required:"true"`
 }
 
@@ -51,8 +51,12 @@ func generateDefaultConfig() testConfig {
 		},
 		Contacts: []Contact{
 			{
-				Name:  "Jinzhu",
-				Email: "wosmvp@gmail.com",
+				Name:  "sumo",
+				Email: "sumo@gmail.com",
+			},
+			{
+				Name:  "sumo2",
+				Email: "sumo2@gmail.com",
 			},
 		},
 		Anonymous: Anonymous{
@@ -80,11 +84,13 @@ func TestLoadNormaltestConfig(t *testing.T) {
 	}
 }
 
+// CONFIGOR_DEBUG_MODE=true CONFIGOR_VERBOSE_MODE=true go test -v   -run TestDefaultValue -count=1
 func TestDefaultValue(t *testing.T) {
 	config := generateDefaultConfig()
 	config.APPName = ""
 	config.DB.Port = 0
 	config.DB.SSL = false
+	config.Contacts[0].Name = ""
 
 	if bytes, err := json.Marshal(config); err == nil {
 		if file, err := ioutil.TempFile("/tmp", "configor"); err == nil {
@@ -93,10 +99,12 @@ func TestDefaultValue(t *testing.T) {
 			file.Write(bytes)
 
 			var result testConfig
-			Load(&result, file.Name())
+			if err := Load(&result, file.Name()); err != nil {
+				t.Error(err)
+			}
 
 			if !reflect.DeepEqual(result, generateDefaultConfig()) {
-				t.Errorf("result should be set default value correctly")
+				t.Errorf("\nExpected: %+v, \nGot: %+v", generateDefaultConfig(), result)
 			}
 		}
 	} else {
