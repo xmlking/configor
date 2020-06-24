@@ -7,24 +7,24 @@ This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) work, w
 ## Features
 
 - Strongly typed config with tags
-- Reflection based config validation
+- Reflection based config validation, for syntax amd examples refer [govalidator](https://github.com/asaskevich/govalidator)
     - Required fields
     - Optional fields
     - Enum fields
     - Min, Max, email, phone etc
-- Setting defaults for fields not in the config files
+- Setting defaults for fields not in the config files. for syntax amd examples refer [creasty's defaults](https://github.com/creasty/defaults)
 - Config Sources
     - YAML files
     - Environment Variables 
     - Command line flags
     - [ ] Kubernetes ConfigMaps
     - Merge multiple config sources (Overlays)
+    - Detect Runtime Environment (test, development, production), auto merge overlay files
 - Dynamic Configuration Management (Hot Reconfiguration)
     - Remote config push
     - Externalized configuration
     - Live component reloading / zero-downtime    
     - [ ] Observe Config [Changes](https://play.golang.org/p/41ygGZ-QaB https://gist.github.com/patrickmn/1549985)
-- Detect Runtime Environment (test, development, production)
 - Support Embed config files in Go binaries via [pkger](https://github.com/markbates/pkger)
 
 ```golang
