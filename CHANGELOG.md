@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+<a name="v0.2.0"></a>
+## [v0.2.0] - 2020-06-23
+### Feat
+- **defaults:** using https://github.com/creasty/defaults for defaults
+
+
 <a name="v0.1.1"></a>
 ## [v0.1.1] - 2020-06-23
+### Build
+- **release:** updated clog
+
 ### Fix
 - **defaults:** now applying defaults after loading the files
 
@@ -24,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **defaults:** added workarround when fields are structs with pointers
 
 
-[Unreleased]: https://github.com/xmlking/configor/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/xmlking/configor/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/xmlking/configor/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/xmlking/configor/compare/v0.1.0...v0.1.1
