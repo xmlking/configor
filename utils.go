@@ -12,9 +12,11 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/creasty/defaults"
 	"github.com/markbates/pkger"
 	"github.com/markbates/pkger/pkging"
 	"gopkg.in/yaml.v2"
+	// "github.com/kelseyhightower/envconfig"
 )
 
 func (configor *Configor) getENVPrefix(config interface{}) string {
@@ -158,63 +160,6 @@ func getPrefixForStruct(prefixes []string, fieldStruct *reflect.StructField) []s
 	return append(prefixes, fieldStruct.Name)
 }
 
-func (configor *Configor) processDefaults(config interface{}) error {
-	v := reflect.ValueOf(config)
-	// Only deal with pointers to structs.
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return errors.New("invalid config, should be a point to struct")
-	}
-
-	// Deref the pointer get to the struct.
-	v = v.Elem()
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		kind := field.Kind()
-
-		if !field.CanAddr() || !field.CanInterface() {
-			continue
-		}
-		// Only recurse down direct pointers, which should only be to nested structs.
-		if kind == reflect.Ptr && field.CanInterface() {
-			// if field is nil, set to empty value of its type.
-			if field.IsNil() {
-				if field.CanAddr() {
-					field.Set(reflect.New(field.Type().Elem()))
-				} else {
-					return fmt.Errorf("ProcessDefaults: field(%+v) is nil", field.Type().String())
-				}
-			}
-			configor.processDefaults(field.Interface())
-		}
-
-		// In case of arrays/slices (repeated fields) go down to the concrete type.
-		if kind == reflect.Array || kind == reflect.Slice {
-			for i := 0; i < field.Len(); i++ {
-				configor.processDefaults(field.Index(i).Addr().Interface())
-			}
-		}
-
-		// TODO reflect.Map
-		// TODO reflect.Struct
-		//if kind == reflect.Array {
-		//	configor.processDefaults(field.Addr().Interface());
-		//}
-
-		// Only when blank, fill the defaults
-		if isBlank := reflect.DeepEqual(field.Interface(), reflect.Zero(field.Type()).Interface()); isBlank {
-			if defaultValue := t.Field(i).Tag.Get("default"); defaultValue != "" {
-				if err := yaml.Unmarshal([]byte(defaultValue), field.Addr().Interface()); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func (configor *Configor) processTags(config interface{}, prefixes ...string) error {
 	configValue := reflect.Indirect(reflect.ValueOf(config))
 	if configValue.Kind() != reflect.Struct {
@@ -331,15 +276,6 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 
 	configFiles := configor.getConfigurationFiles(files...)
 
-	// process defaults
-	//if err = configor.processDefaults(config); err != nil {
-	//	return err
-	//}
-	//
-	//if configor.Config.Verbose {
-	//	fmt.Printf("Configuration after Defaults set, and before loading :\n  %#v\n", config)
-	//}
-
 	for _, file := range configFiles {
 		if configor.Config.Debug || configor.Config.Verbose {
 			fmt.Printf("Loading configurations from file '%v'...\n", file)
@@ -350,16 +286,16 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 	}
 
 	if configor.Config.Verbose {
-		fmt.Printf("Configuration after loading, and before Defaults set :\n  %#v\n", config)
+		fmt.Printf("Configuration after loading, and before setting Defaults :\n  %#+v\n", config)
 	}
 
 	// process defaults
-	if err = configor.processDefaults(config); err != nil {
+	if err = defaults.Set(config); err != nil {
 		return err
 	}
 
 	if configor.Config.Verbose {
-		fmt.Printf("Configuration after loading and Defaults set, before ENV processing :\n  %#v\n", config)
+		fmt.Printf("Configuration after loading files and setting Defaults, before processing ENV:\n  %#v\n", config)
 	}
 
 	if prefix := configor.getENVPrefix(config); prefix == "-" {
