@@ -54,9 +54,8 @@ func (configor *Configor) getConfigurationFiles(files ...string) []string {
 		fmt.Printf("Current environment: '%v'\n", configor.GetEnvironment())
 	}
 
-	for i := len(files) - 1; i >= 0; i-- {
+	for _, file := range files {
 		foundFile := false
-		file := files[i]
 
 		// check configuration
 		if fileInfo, err := stat(file, configor.UsePkger); err == nil && fileInfo.Mode().IsRegular() {
