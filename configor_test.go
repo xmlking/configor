@@ -565,6 +565,7 @@ func TestValidation(t *testing.T) {
 		AuthorIP string `valid:"ipv4"`
 		Email    string `valid:"email"`
 		Email2   string `valid:"email,optional"` // FIXME bug in govalidator
+		Endpoint  string `valid:"required"`
 		Count    int64
 		Slient   bool
 	}
@@ -580,6 +581,40 @@ func TestValidation(t *testing.T) {
 			fmt.Printf("\t%d. %s: %s\n", cnt, field, err)
 		}
 		// t.Error("Error validating")
+	}
+}
+
+func TestValidationMore(t *testing.T){
+
+	type Address struct {
+		Street string `valid:"-"`
+		Zip    string `json:"zip" valid:"numeric,required"`
+	}
+
+	type User struct {
+		Name     string `valid:"required"` // FIXME: https://github.com/asaskevich/govalidator/issues/359
+		Email    string `valid:"required,email"`
+		Password string `valid:"required"`
+		Age      int    `valid:"required,numeric,range(1|200),@#\u0000"`
+		Home     *Address
+		Work     []Address
+	}
+
+	var tests = []struct {
+		param    interface{}
+		expected bool
+	}{
+		{&User{"John", "john@yahoo.com", "123G#678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
+		{&User{"John", "john!yahoo.com", "12345678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
+		{&User{"John", "", "12345", 0, &Address{"Street", "123456789"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
+		{&User{"", "john@yahoo.com", "123G#678", 20, &Address{"Street", "95504"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, true},
+	}
+	for _, test := range tests {
+		err := Load(test.param)
+		t.Log(err)
+		if test.expected && err != nil {
+				t.Errorf("Got Error on ValidateStruct(%#v)\n Error: %s", test.param, err)
+		}
 	}
 }
 
