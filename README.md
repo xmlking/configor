@@ -183,14 +183,15 @@ $ CONFIGOR_USE_PKGER=true  go run config.go
 
 * Load From Shell Environment
 
+Struct field names will be converted to **UpperSnakeCase**
 ```go
-$ CONFIGOR_APPNAME="hello world" CONFIGOR_DB_NAME="hello world" go run config.go
+$ CONFIGOR_APP_NAME="hello world" CONFIGOR_DB_NAME="hello world" go run config.go
 // Load configuration from shell environment, it's name is {{prefix}}_FieldName
 ```
 
 ```go
 // You could overwrite the prefix with environment CONFIGOR_ENV_PREFIX, for example:
-$ CONFIGOR_ENV_PREFIX="WEB" WEB_APPNAME="hello world" WEB_DB_NAME="hello world" go run config.go
+$ CONFIGOR_ENV_PREFIX="WEB" WEB_APP_NAME="hello world" WEB_DB_NAME="hello world" go run config.go
 
 // Set prefix by config
 configor.New(&configor.Config{ENVPrefix: "WEB"}).Load(&Config, "config.json")

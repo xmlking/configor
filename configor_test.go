@@ -304,10 +304,10 @@ func TestOverwritetestConfigurationWithEnvironmentWithDefaultPrefix(t *testing.T
 			defer os.Remove(file.Name())
 			file.Write(bytes)
 			var result testConfig
-			os.Setenv("CONFIGOR_APPNAME", "config2")
+			os.Setenv("CONFIGOR_APP_NAME", "config2")
 			os.Setenv("CONFIGOR_HOSTS", "- http://example.org\n- http://jinzhu.me")
 			os.Setenv("CONFIGOR_DB_NAME", "db_name")
-			defer os.Setenv("CONFIGOR_APPNAME", "")
+			defer os.Setenv("CONFIGOR_APP_NAME", "")
 			defer os.Setenv("CONFIGOR_HOSTS", "")
 			defer os.Setenv("CONFIGOR_DB_NAME", "")
 			Load(&result, file.Name())
@@ -333,10 +333,10 @@ func TestOverwritetestConfigurationWithEnvironment(t *testing.T) {
 			file.Write(bytes)
 			var result testConfig
 			os.Setenv("CONFIGOR_ENV_PREFIX", "app")
-			os.Setenv("APP_APPNAME", "config2")
+			os.Setenv("APP_APP_NAME", "config2")
 			os.Setenv("APP_DB_NAME", "db_name")
 			defer os.Setenv("CONFIGOR_ENV_PREFIX", "")
-			defer os.Setenv("APP_APPNAME", "")
+			defer os.Setenv("APP_APP_NAME", "")
 			defer os.Setenv("APP_DB_NAME", "")
 			Load(&result, file.Name())
 
@@ -358,10 +358,10 @@ func TestOverwritetestConfigurationWithEnvironmentThatSetBytestConfig(t *testing
 			defer file.Close()
 			defer os.Remove(file.Name())
 			file.Write(bytes)
-			os.Setenv("APP1_APPName", "config2")
-			os.Setenv("APP1_DB_Name", "db_name")
-			defer os.Setenv("APP1_APPName", "")
-			defer os.Setenv("APP1_DB_Name", "")
+			os.Setenv("APP1_APP_NAME", "config2")
+			os.Setenv("APP1_DB_NAME", "db_name")
+			defer os.Setenv("APP1_APP_NAME", "")
+			defer os.Setenv("APP1_DB_NAME", "")
 
 			var result testConfig
 			var Configor = New(&Config{ENVPrefix: "APP1"})
@@ -387,10 +387,10 @@ func TestResetPrefixToBlank(t *testing.T) {
 			file.Write(bytes)
 			var result testConfig
 			os.Setenv("CONFIGOR_ENV_PREFIX", "-")
-			os.Setenv("APPNAME", "config2")
+			os.Setenv("APP_NAME", "config2")
 			os.Setenv("DB_NAME", "db_name")
 			defer os.Setenv("CONFIGOR_ENV_PREFIX", "")
-			defer os.Setenv("APPNAME", "")
+			defer os.Setenv("APP_NAME", "")
 			defer os.Setenv("DB_NAME", "")
 			Load(&result, file.Name())
 
@@ -414,11 +414,11 @@ func TestResetPrefixToBlank2(t *testing.T) {
 			file.Write(bytes)
 			var result testConfig
 			os.Setenv("CONFIGOR_ENV_PREFIX", "-")
-			os.Setenv("APPName", "config2")
-			os.Setenv("DB_Name", "db_name")
+			os.Setenv("APP_NAME", "config2")
+			os.Setenv("DB_NAME", "db_name")
 			defer os.Setenv("CONFIGOR_ENV_PREFIX", "")
 			defer os.Setenv("APPName", "")
-			defer os.Setenv("DB_Name", "")
+			defer os.Setenv("DB_NAME", "")
 			Load(&result, file.Name())
 
 			var defaultConfig = generateDefaultConfig()
@@ -535,17 +535,24 @@ func TestConfigFromEnv(t *testing.T) {
 		LineBreakString string `required:"true"`
 		Count           int64
 		Slient          bool
+		HomeAddress     struct {
+			StreetName string
+			City       string
+		}
 	}
 
 	cfg := &config{}
 
 	os.Setenv("CONFIGOR_ENV_PREFIX", "CONFIGOR")
-	os.Setenv("CONFIGOR_LineBreakString", "Line one\nLine two\nLine three\nAnd more lines")
-	os.Setenv("CONFIGOR_Slient", "1")
-	os.Setenv("CONFIGOR_Count", "10")
+	os.Setenv("CONFIGOR_LINE_BREAK_STRING", "Line one\nLine two\nLine three\nAnd more lines")
+	os.Setenv("CONFIGOR_SLIENT", "1")
+	os.Setenv("CONFIGOR_COUNT", "10")
+	os.Setenv("CONFIGOR_HOME_ADDRESS_STREET_NAME", "abc")
 	Load(cfg)
 
-	if os.Getenv("CONFIGOR_LineBreakString") != cfg.LineBreakString {
+	t.Log(cfg)
+
+	if os.Getenv("CONFIGOR_LINE_BREAK_STRING") != cfg.LineBreakString {
 		t.Error("Failed to load value has line break from env")
 	}
 
@@ -556,6 +563,10 @@ func TestConfigFromEnv(t *testing.T) {
 	if cfg.Count != 10 {
 		t.Error("Failed to load number from env")
 	}
+
+	if os.Getenv("CONFIGOR_HOME_ADDRESS_STREET_NAME") != cfg.HomeAddress.StreetName {
+		t.Error("Failed to load StreetName from env")
+	}
 }
 
 func TestValidation(t *testing.T) {
@@ -565,7 +576,7 @@ func TestValidation(t *testing.T) {
 		AuthorIP string `valid:"ipv4"`
 		Email    string `valid:"email"`
 		Email2   string `valid:"email,optional"` // FIXME bug in govalidator
-		Endpoint  string `valid:"required"`
+		Endpoint string `valid:"required"`
 		Count    int64
 		Slient   bool
 	}
@@ -584,7 +595,7 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-func TestValidationMore(t *testing.T){
+func TestValidationMore(t *testing.T) {
 
 	type Address struct {
 		Street string `valid:"-"`
@@ -592,7 +603,7 @@ func TestValidationMore(t *testing.T){
 	}
 
 	type User struct {
-		Name     string `valid:"required"` // FIXME: https://github.com/asaskevich/govalidator/issues/359
+		Name     string `valid:"required"`
 		Email    string `valid:"required,email"`
 		Password string `valid:"required"`
 		Age      int    `valid:"required,numeric,range(1|200),@#\u0000"`
@@ -607,13 +618,13 @@ func TestValidationMore(t *testing.T){
 		{&User{"John", "john@yahoo.com", "123G#678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
 		{&User{"John", "john!yahoo.com", "12345678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
 		{&User{"John", "", "12345", 0, &Address{"Street", "123456789"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
-		{&User{"", "john@yahoo.com", "123G#678", 20, &Address{"Street", "95504"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, true},
+		{&User{"", "john@yahoo.com", "123G#678", 20, &Address{"Street", "95504"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
 	}
 	for _, test := range tests {
 		err := Load(test.param)
 		t.Log(err)
 		if test.expected && err != nil {
-				t.Errorf("Got Error on ValidateStruct(%#v)\n Error: %s", test.param, err)
+			t.Errorf("Got Error on ValidateStruct(%#v)\n Error: %s", test.param, err)
 		}
 	}
 }

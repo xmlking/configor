@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+<a name="v0.2.2"></a>
+## [v0.2.2] - 2020-08-17
+### Fix
+- **environment:** now look for environment variables in UpperSnakeCase
+
+
 <a name="v0.2.1"></a>
 ## [v0.2.1] - 2020-06-28
+### Build
+- **clog:** updating changelog
+
 ### Fix
 - **files:** fix files load orfer in getConfigurationFiles
 
@@ -45,7 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **defaults:** added workarround when fields are structs with pointers
 
 
-[Unreleased]: https://github.com/xmlking/configor/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/xmlking/configor/compare/v0.2.2...HEAD
+[v0.2.2]: https://github.com/xmlking/configor/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/xmlking/configor/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/xmlking/configor/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/xmlking/configor/compare/v0.1.0...v0.1.1

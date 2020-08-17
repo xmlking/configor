@@ -17,6 +17,7 @@ import (
 	"github.com/markbates/pkger/pkging"
 	"gopkg.in/yaml.v2"
 	// "github.com/kelseyhightower/envconfig"
+	"github.com/stoewer/go-strcase"
 )
 
 func (configor *Configor) getENVPrefix(config interface{}) string {
@@ -179,8 +180,9 @@ func (configor *Configor) processTags(config interface{}, prefixes ...string) er
 		}
 
 		if envName == "" {
-			envNames = append(envNames, strings.Join(append(prefixes, fieldStruct.Name), "_"))                  // Configor_DB_Name
-			envNames = append(envNames, strings.ToUpper(strings.Join(append(prefixes, fieldStruct.Name), "_"))) // CONFIGOR_DB_NAME
+			envNames = append(envNames, strcase.UpperSnakeCase(strings.Join(append(prefixes, fieldStruct.Name), "_"))) // CONFIGOR_DB_NAME
+			// envNames = append(envNames, strings.Join(append(prefixes, fieldStruct.Name), "_"))                  // Configor_DB_Name
+			// envNames = append(envNames, strings.ToUpper(strings.Join(append(prefixes, fieldStruct.Name), "_"))) // CONFIGOR_DB_NAME
 		} else {
 			envNames = []string{envName}
 		}
