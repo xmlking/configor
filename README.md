@@ -2,7 +2,7 @@
 
 Golang Configuration module that support YAML, JSON, Shell Environment
 
-This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) work, with some bug fixes and enhancements. 
+This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) and [sherifabdlnaby/configuro's](https://github.com/sherifabdlnaby/configuro) work, with some bug fixes and enhancements. 
 
 ## Features
 
@@ -15,7 +15,8 @@ This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) work, w
 - Setting defaults for fields not in the config files. for syntax amd examples refer [creasty's defaults](https://github.com/creasty/defaults)
 - Config Sources
     - YAML files
-    - Environment Variables 
+    - Environment Variables
+    - [ ] Environment Variables Expanding
     - Command line flags
     - [ ] Kubernetes ConfigMaps
     - Merge multiple config sources (Overlays)
@@ -234,3 +235,7 @@ func main() {
 ## Gotchas
 - Defaults not initialized for `Map` type fields
 - Overlaying (merging) not working for `Map` type fields
+
+## TODO
+- use [mergo](https://github.com/imdario/mergo) to merge to fix Overlaying `Map` type fields
+- Adopt Environment Variables Expanding from [sherifabdlnaby/configuro](https://github.com/sherifabdlnaby/configuro)
