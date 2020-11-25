@@ -7,5 +7,5 @@ require (
 	github.com/creasty/defaults v1.5.1
 	github.com/markbates/pkger v0.17.1
 	github.com/stoewer/go-strcase v1.2.0
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
