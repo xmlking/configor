@@ -11,13 +11,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/creasty/defaults"
+	"github.com/go-playground/validator/v10"
 	"github.com/markbates/pkger"
 	"github.com/markbates/pkger/pkging"
-	"gopkg.in/yaml.v2"
 	// "github.com/kelseyhightower/envconfig"
 	"github.com/stoewer/go-strcase"
+	"gopkg.in/yaml.v2"
 )
 
 func (configor *Configor) getENVPrefix(config interface{}) string {
@@ -307,7 +307,9 @@ func (configor *Configor) load(config interface{}, files ...string) (err error) 
 
 	// validate config only if no parsing errors
 	if err == nil {
-		_, err = govalidator.ValidateStruct(config)
+		validate := validator.New()
+		// validate.SetTagName("valid")
+		err = validate.Struct(config)
 	}
 
 	return err

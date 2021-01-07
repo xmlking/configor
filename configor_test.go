@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/asaskevich/govalidator"
+	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v2"
 )
 
@@ -571,25 +571,23 @@ func TestConfigFromEnv(t *testing.T) {
 
 func TestValidation(t *testing.T) {
 	type config struct {
-		Name     string `valid:"-"`
-		Title    string `valid:"alphanum,required"`
-		AuthorIP string `valid:"ipv4"`
-		Email    string `valid:"email"`
-		Email2   string `valid:"email,optional"` // FIXME bug in govalidator
-		Endpoint string `valid:"required"`
-		Count    int64
-		Slient   bool
+		Name     string `validate:"-"`
+		Title    string `validate:"alphanum,required"`
+		AuthorIP string `validate:"ipv4"`
+		Email    string `validate:"email"`
+		Email2   string `validate:"email"`
+		Endpoint string `validate:"required"`
+		Count    int64  `validate:"required"`
+		Slient   bool   `validate:"required"`
 	}
 
 	cfg := &config{Email: "a@b.com", Email2: "", AuthorIP: "1.1"}
 	err := Load(cfg)
 	fmt.Printf("%+v\n", cfg)
 	if err != nil {
-		errs := govalidator.ErrorsByField(err)
-		cnt := 0
-		for field, err := range errs {
-			cnt++
-			fmt.Printf("\t%d. %s: %s\n", cnt, field, err)
+		errs := err.(validator.ValidationErrors)
+		for index, err := range errs {
+			fmt.Printf("\t%d.  %s\n", index, err)
 		}
 		// t.Error("Error validating")
 	}
@@ -598,34 +596,47 @@ func TestValidation(t *testing.T) {
 func TestValidationMore(t *testing.T) {
 
 	type Address struct {
-		Street string `valid:"-"`
-		Zip    string `json:"zip" valid:"numeric,required"`
+		Street string `validate:"-"`
+		Zip    string `json:"zip" validate:"numeric,required"`
 	}
 
 	type User struct {
-		Name     string `valid:"required"`
-		Email    string `valid:"required,email"`
-		Password string `valid:"required"`
-		Age      int    `valid:"required,numeric,range(1|200),@#\u0000"`
-		Home     *Address
-		Work     []Address
+		Name           string `validate:"required"`
+		Email          string `validate:"required,email"`
+		Password       string `validate:"required"`
+		Age            int    `validate:"required,numeric,gte=0,lte=130"`
+		FavouriteColor string `validate:"hexcolor|rgb|rgba"`
+		Home           *Address
+		Work           []Address `validate:"required,dive,required"`
 	}
 
 	var tests = []struct {
 		param    interface{}
 		expected bool
 	}{
-		{&User{"John", "john@yahoo.com", "123G#678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
-		{&User{"John", "john!yahoo.com", "12345678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
-		{&User{"John", "", "12345", 0, &Address{"Street", "123456789"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
-		{&User{"", "john@yahoo.com", "123G#678", 20, &Address{"Street", "95504"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
+		{&User{"John", "john@yahoo.com", "123G#678", 20, "#010", &Address{"", "ABC456D89"}, []Address{{"Street", "123456"}, {"Street", "54321"}}}, false},
+		{&User{"John", "john!yahoo.com", "12345678", 20, "#001", &Address{"Street", "ABC456D89"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
+		{&User{"John", "", "12345", -1, "rgb(255,255,255)", &Address{"Street", "123456789"}, []Address{{"Street", "ABC456D89"}, {"Street", "123456"}}}, false},
+		{&User{"", "john@yahoo.com", "123G#678", 20, "#000", &Address{"Street", "95504"}, []Address{{"Street", "123456"}, {"Street", "A123456"}}}, false},
 	}
 	for _, test := range tests {
 		err := Load(test.param)
-		t.Log(err)
-		if test.expected && err != nil {
-			t.Errorf("Got Error on ValidateStruct(%#v)\n Error: %s", test.param, err)
+		if err != nil {
+			t.Logf("Error for: %#v", test.param)
+			// this check is only needed when your code could produce
+			// an invalid value for validation such as interface with nil
+			// value most including myself do not usually have code like this.
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				t.Log(err)
+			}
+			for _, err := range err.(validator.ValidationErrors) {
+				t.Logf("Error: %v, Value: %v", err, err.Value())
+			}
+			if test.expected {
+				t.Errorf("Got Error: %s", err)
+			}
 		}
+		t.Log("-----------------------")
 	}
 }
 

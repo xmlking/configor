@@ -7,7 +7,7 @@ This is based on [jinzhu/configor's](https://github.com/jinzhu/configor) and [sh
 ## Features
 
 - Strongly typed config with tags
-- Reflection based config validation, for syntax amd examples refer [govalidator](https://github.com/asaskevich/govalidator)
+- Reflection based config validation, for syntax amd examples refer [validator](https://github.com/go-playground/validator#examples)
     - Required fields
     - Optional fields
     - Enum fields
