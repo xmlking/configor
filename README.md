@@ -1,3 +1,6 @@
+
+# *** moved to https://github.com/xmlking/toolkit/tree/develop/configurator ***
+
 # Configor
 
 Golang Configuration module that support YAML, JSON, Shell Environment
